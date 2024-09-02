@@ -1,4 +1,6 @@
 import random
+import tkinter as tk
+from tkinter import messagebox, simpledialog
 
 # Lista de campeões
 campeoes = ["Aatrox", "Ahri", "Akali", "Akshan", "Alistar",
@@ -33,94 +35,93 @@ campeoes = ["Aatrox", "Ahri", "Akali", "Akshan", "Alistar",
             "Vladimir", "Volibear", "Warwick", "Wukong", "Xayah",
             "Xerath", "Xin Zhao", "Yasuo", "Yone", "Yorick",
             "Yuumi", "Zac", "Zed", "Zeri", "Ziggs",
-            "Zilean", "Zoe", "Zyra",
-]
+            "Zilean", "Zoe", "Zyra"]
 
-# Solicitar entrada do usuário para a quantidade de jogadores e opções de campeões por jogador
-def ler_nomes():
-    entrada = input("Digite os nomes dos jogadores: ")
-    opcoes_campeoes = int(input("Digite a quantidade de opções de campeões por jogador: "))
-    nomes = [nome.strip() for nome in entrada.replace(',', ' ',).split()]
-    num_jogadores = len(nomes)
-
-    return nomes, num_jogadores, opcoes_campeoes
-
-# Sortear os campeões para cada jogador
 def sortear_campeoes(nomes, campeoes, opcoes_campeoes):
     sorteio = {}
-    # cria cópia da lista de campeões para não remover em definitivo
     campeoes_disponiveis = campeoes.copy()
     
     for nome in nomes:
-        # Verificar se há campeões suficientes para sortear
         if len(campeoes_disponiveis) < opcoes_campeoes:
-            print(f"Atenção: Não há campeões suficientes para sortear para {nome}")
+            messagebox.showinfo("Atenção", f"Não há campeões suficientes para sortear para {nome}")
             sorteio[nome] = random.sample(campeoes_disponiveis, len(campeoes_disponiveis))
             continue
 
-        # Sortear campeoes
         sorteio[nome] = random.sample(campeoes_disponiveis, opcoes_campeoes)
-        
-        # Remover os campeoes sorteados da lista de campeões
         for campeao in sorteio[nome]:
             campeoes_disponiveis.remove(campeao)
+    
     return sorteio
 
-# Mostrar o resultado
 def resultado(sorteio):
-    print(f"Time A:")
+    time_a = "Time A:\n"
+    time_b = "Time B:\n"
+    
     for i, (nome, campeoes) in enumerate(sorteio.items()):
         if i < len(sorteio)//2:
-            print(f"{nome}: {campeoes}")
+            time_a += f"{nome}: {', '.join(campeoes)}\n"
+        else:
+            time_b += f"{nome}: {', '.join(campeoes)}\n"
+    
+    return f"{time_a}\n{time_b}"
 
-    print(f"Time B:")
-    for i, (nome, campeoes) in enumerate(sorteio.items()):
-        if i >= len(sorteio)//2:
-            print(f"{nome}: {campeoes}")
+def iniciar_sorteio():
+    global sorteio, nomes, opcoes_campeoes
+    nomes_input = simpledialog.askstring("Nomes", "Digite os nomes dos jogadores (separados por vírgula):")
+    opcoes_campeoes = simpledialog.askinteger("Campeões", "Digite a quantidade de opções de campeões por jogador:")
+    
+    if nomes_input and opcoes_campeoes:
+        nomes = [nome.strip() for nome in nomes_input.split(',')]
+        random.shuffle(nomes)
+        sorteio = sortear_campeoes(nomes, campeoes, opcoes_campeoes)
+        exibir_resultado()
 
+def exibir_resultado():
+    global sorteio
+    resultado_texto = resultado(sorteio)
+    resultado_box.delete(1.0, tk.END)
+    resultado_box.insert(tk.END, resultado_texto)
 
-# Chamada da função de ler nomes
-nomes, num_jogadores, opcoes_campeoes = ler_nomes()
+def refazer_sorteio_mesmos_times():
+    global sorteio
+    if 'nomes' in globals() and 'opcoes_campeoes' in globals():
+        sorteio = sortear_campeoes(nomes, campeoes, opcoes_campeoes)
+        exibir_resultado()
+    else:
+        messagebox.showinfo("Erro", "Por favor, inicie um sorteio primeiro.")
 
-# Embaralha os nomes para definição dos times
-random.shuffle(nomes)
+def refazer_sorteio_novos_times():
+    global sorteio
+    if 'nomes' in globals() and 'opcoes_campeoes' in globals():
+        random.shuffle(nomes)
+        sorteio = sortear_campeoes(nomes, campeoes, opcoes_campeoes)
+        exibir_resultado()
+    else:
+        messagebox.showinfo("Erro", "Por favor, inicie um sorteio primeiro.")
 
-# Chamada da função de sortear os campeões para cada jogador
-sorteio = sortear_campeoes(nomes, campeoes, opcoes_campeoes)
+def copiar_resultado():
+    root.clipboard_clear()
+    root.clipboard_append(resultado_box.get(1.0, tk.END))
+    messagebox.showinfo("Copiado", "Resultado copiado para a área de transferência.")
 
-# Chamada da função para exibição do resultado
-resultado(sorteio)
+# Configurar a interface gráfica
+root = tk.Tk()
+root.title("Sorteio de Campeões")
+root.geometry("400x400")
 
+btn_iniciar = tk.Button(root, text="Iniciar Sorteio", command=iniciar_sorteio)
+btn_iniciar.pack(pady=10)
 
-# Solicitar ao usuário se deseja realizar um novo sorteio das opções de campeões
-novo_sorteio = input("\nDeseja realizar um novo sorteio das opções de campeões? (s/n): ")
+btn_refazer_mesmos_times = tk.Button(root, text="Refazer Sorteio (Mesmos Times)", command=refazer_sorteio_mesmos_times)
+btn_refazer_mesmos_times.pack(pady=10)
 
-# Loop para sortear até o usuário digitar não
-while(novo_sorteio.lower() != 'n'):
+btn_refazer_novos_times = tk.Button(root, text="Refazer Sorteio (Novos Times)", command=refazer_sorteio_novos_times)
+btn_refazer_novos_times.pack(pady=10)
 
-    # Realizar um novo sorteio das opções de campeões
-    sorteio = sortear_campeoes(nomes, campeoes, opcoes_campeoes)
+btn_copiar = tk.Button(root, text="Copiar Resultado", command=copiar_resultado)
+btn_copiar.pack(pady=10)
 
-    # Imprimir os resultados do segundo sorteio
-    resultado(sorteio)
-    novo_sorteio = input("\nDeseja realizar um novo sorteio das opções de campeões? (s/n): ")
+resultado_box = tk.Text(root, wrap=tk.WORD, height=15)
+resultado_box.pack(pady=10, padx=10)
 
-# Fim do sorteio
-print(f"Fim de jogo! Proibido tilt!")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+root.mainloop()
